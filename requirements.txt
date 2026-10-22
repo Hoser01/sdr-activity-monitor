@@ -1,0 +1,4 @@
+# Installed from Ubuntu packages for unattended system operation:
+# python3-numpy, python3-yaml, rtl-sdr
+numpy>=1.26
+PyYAML>=6.0

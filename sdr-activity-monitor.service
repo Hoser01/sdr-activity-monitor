@@ -1,0 +1,26 @@
+[Unit]
+Description=SDR Activity Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sdr-monitor
+Group=sdr-monitor
+SupplementaryGroups=plugdev
+UMask=0007
+WorkingDirectory=/opt/sdr-activity-monitor
+EnvironmentFile=-/etc/default/sdr-activity-monitor
+ExecStartPre=+/usr/bin/usbreset 0bda:2838
+ExecStart=/usr/bin/python3 -m app.monitor --config /opt/sdr-activity-monitor/config/config.yaml
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/sdr-activity-monitor/data /opt/sdr-activity-monitor/logs
+
+[Install]
+WantedBy=multi-user.target

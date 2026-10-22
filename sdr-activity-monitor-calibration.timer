@@ -1,0 +1,12 @@
+[Unit]
+Description=Recalibrate SDR Activity Monitor every three hours
+
+[Timer]
+OnCalendar=*-*-* 00/3:47:00
+AccuracySec=1s
+Persistent=false
+Unit=sdr-activity-monitor-calibration.service
+
+[Install]
+WantedBy=timers.target
+

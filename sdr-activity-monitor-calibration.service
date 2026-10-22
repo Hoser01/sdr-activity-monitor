@@ -1,0 +1,9 @@
+[Unit]
+Description=Trigger SDR Activity Monitor noise-floor calibration
+Requires=sdr-activity-monitor.service
+After=sdr-activity-monitor.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl kill --kill-who=main --signal=SIGHUP sdr-activity-monitor.service
+

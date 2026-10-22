@@ -1,0 +1,21 @@
+[Unit]
+Description=SDR Activity Monitor Web Dashboard
+After=network.target sdr-activity-monitor.service
+Requires=sdr-activity-monitor.service
+
+[Service]
+Type=simple
+User=sdr-monitor
+Group=sdr-monitor
+WorkingDirectory=/opt/sdr-activity-monitor
+ExecStart=/usr/bin/python3 -m app.web --bind 127.0.0.1 --port 18090
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+

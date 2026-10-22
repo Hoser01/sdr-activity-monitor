@@ -1,0 +1,194 @@
+node:
+  id: LOCAL-01
+  name: W0WC Local Server
+  location:
+    latitude: null
+    longitude: null
+  antenna: "2-meter antenna (describe in local configuration)"
+
+receiver:
+  driver: rtl_sdr
+  device: 0
+  active_group: 2m-main
+  fft_size: 16384
+  gain: 32.8
+  retry_seconds: 10
+  rtl_sdr_path: /usr/bin/rtl_sdr
+
+groups:
+  - id: 2m-main
+    center_frequency: 146280000
+    sample_rate: 2400000
+    dwell_seconds: 0
+
+assets:
+  - id: channel-145350
+    type: repeater
+    name: "N0NWS Joplin 145.350"
+    callsign: N0NWS
+    frequency: 145350000
+    input_frequency: 144750000
+    offset_hz: -600000
+    modes: [FM, P25]
+    access:
+      analog_tone_hz: 91.5
+      p25_nac: "293"
+    services:
+      echolink: true
+    bandwidth: 15000
+    location:
+      city: Joplin
+      state: MO
+      latitude: 37.076733
+      longitude: -94.555230
+    source: user-provided
+    notes: "FM, EchoLink, and P25 repeater"
+    last_metadata_update: "2026-10-05"
+    monitoring: {enabled: true, group: 2m-main}
+    detection: &repeater_detection
+      threshold_above_noise_db: 6
+      minimum_tx_ms: 750
+      minimum_evidence_frames: 3
+      maximum_center_variation_hz: 5000
+      # Store shorter events as kerchunks, but exclude them from sessions/alerts.
+      kerchunk_max_ms: 3500
+      dropout_merge_ms: 300
+      session_timeout_seconds: 300
+      noise_alpha: 0.0005
+      noise_rise_alpha: 0.00001
+      startup_noise_percentile: 25
+    alert: &quiet_alert
+      minimum_transmissions: 5
+      minimum_airtime_seconds: 15
+      window_seconds: 600
+      cooldown_seconds: 1800
+  - id: simplex-146520
+    type: simplex
+    name: 2m National Simplex
+    frequency: 146520000
+    mode: FM
+    bandwidth: 15000
+    location: {city: null, state: null, latitude: null, longitude: null}
+    monitoring: {enabled: true, group: 2m-main}
+    detection: &simplex_detection
+      threshold_above_noise_db: 6
+      minimum_tx_ms: 750
+      minimum_evidence_frames: 3
+      maximum_center_variation_hz: 5000
+      dropout_merge_ms: 300
+      session_timeout_seconds: 300
+      noise_alpha: 0.0005
+      noise_rise_alpha: 0.00001
+      startup_noise_percentile: 25
+    alert:
+      minimum_transmissions: 3
+      minimum_airtime_seconds: 10
+      window_seconds: 300
+      cooldown_seconds: 1800
+  - id: channel-147210
+    type: repeater
+    name: "W0IN Joplin 147.210"
+    callsign: W0IN
+    frequency: 147210000
+    input_frequency: 147810000
+    offset_hz: 600000
+    modes: [FM]
+    access:
+      analog_tone_hz: 91.5
+    bandwidth: 15000
+    location:
+      city: Joplin
+      state: MO
+      latitude: 37.019598
+      longitude: -94.539976
+    source: user-provided
+    notes: "Standard +600 kHz FM repeater"
+    last_metadata_update: "2026-10-05"
+    monitoring: {enabled: true, group: 2m-main}
+    detection:
+      <<: *repeater_detection
+      # This repeater's weaker IDs/return tones peak around 5-6 dB above its
+      # learned floor. Keep this channel slightly more sensitive than default.
+      threshold_above_noise_db: 5
+    alert: *quiet_alert
+  - id: repeater-w0in-carthage-145190
+    type: repeater
+    name: "W0IN Carthage 145.190"
+    callsign: W0IN
+    frequency: 145190000
+    input_frequency: 144590000
+    offset_hz: -600000
+    modes: [FM]
+    access:
+      analog_tone_hz: 91.5
+    bandwidth: 15000
+    location:
+      city: Carthage
+      state: MO
+      latitude: 37.181125
+      longitude: -94.326551
+    source: user-provided
+    notes: "Standard -600 kHz FM repeater"
+    last_metadata_update: "2026-10-06"
+    monitoring: {enabled: true, group: 2m-main}
+    detection: *repeater_detection
+    alert: *quiet_alert
+  - id: repeater-wb0iyc-joplin-147000
+    type: repeater
+    name: "WB0IYC Joplin 147.000"
+    callsign: WB0IYC
+    frequency: 147000000
+    input_frequency: 147600000
+    offset_hz: 600000
+    modes: [FM]
+    access:
+      analog_tone_hz: 100.0
+    bandwidth: 15000
+    location:
+      city: Joplin
+      state: MO
+      latitude: 37.088877
+      longitude: -94.515464
+    source: user-provided
+    notes: "Standard +600 kHz FM repeater"
+    last_metadata_update: "2026-10-06"
+    monitoring: {enabled: true, group: 2m-main}
+    detection:
+      <<: *repeater_detection
+      # WB0IYC's carrier can settle only 4-8 dB above the local floor.
+      threshold_above_noise_db: 4
+      # Recurring local interference arrives as short bursts; retain it for
+      # diagnostics but do not count bursts under 15 seconds toward alerts.
+      kerchunk_max_ms: 15000
+    alert: *quiet_alert
+discord:
+  webhook_env: SDR_MONITOR_DISCORD_WEBHOOK
+interference_rejection:
+  # Allow the tuner and AGC to settle before event detection begins.
+  startup_calibration_seconds: 15
+  # If several channels rise together, retain only a channel this much stronger.
+  # Similar-strength rises are classified as broadband overload/interference.
+  dominance_db: 12
+  # Strong local signals can desensitize other channels; freeze their baselines.
+  strong_signal_guard_db: 20
+  overload_recovery_seconds: 2
+  # Strong signals outside the capture window can drive several channels down.
+  desense_drop_db: 4
+diagnostics:
+  # One lightweight power/noise point per channel per second for remote diagnosis.
+  power_trace_interval_seconds: 1
+  power_trace_retention_hours: 72
+  # Restart/reset the dongle when all channel powers become implausibly static.
+  flatline_window_seconds: 30
+  flatline_min_std_db: 0.005
+storage:
+  database: /opt/sdr-activity-monitor/data/activity.db
+health:
+  log_interval_seconds: 60
+recovery:
+  # Retry a failed helper inside the monitor with bounded exponential backoff.
+  # After this budget is exhausted, systemd performs the USB reset/restart.
+  max_restart_attempts: 3
+  max_retry_seconds: 60
+logging:
+  level: INFO
